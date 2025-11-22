@@ -1,50 +1,18 @@
-import Groq from "groq-sdk";
+import express from "express";
+import { connectDB } from "./config/db.js";
+import employeeRouter from "./employeeRouter.js";
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const app = express();
+connectDB();
 
-async function main() {
-  const result = await groq.chat.completions.create({
-    temperature: 1,
-    top_p: 1,
-    model: "llama-3.3-70b-versatile",
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are smart personal Assistant who answer the asked questions.",
-      },
-      {
-        role: "user",
-        content: "when was iphone 16 launched ?",
-      },
-    ],
-    tools: [
-      {
-        type: "function",
-        function: {
-          name: "web_Search",
-          description:
-            "search the latest information and realtime data from the internet",
-          parameters: {
-            type: "object",
-            properties: {
-              query: {
-                type: "string",
-                description: "The city and state, e.g. San Francisco, CA",
-              },
-              unit: {
-                type: "string",
-                enum: ["celsius", "fahrenheit"],
-              },
-            },
-            required: ["query"],
-          },
-        },
-      },
-    ],
-  });
+app.use(express.json());
 
-  console.log(result.choices[0].message.content);
-}
+app.use("/", employeeRouter);
 
-main();
+app.get("/", (req, res) => {
+  res.send("Hello, World!");
+});
+
+app.listen(3000, () => {
+  console.log(" server is listening on port 3000");
+});

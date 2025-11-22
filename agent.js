@@ -6,6 +6,7 @@ import { ChatGroq } from "@langchain/groq";
 
 import { weatherTool } from "./tools/weatherTools.js";
 import { addTwoNumbers } from "./tools/addTwoNumber.js";
+import { employeeInfoTool } from "./tools/employeeetails.js";
 
 const model = new ChatGroq({
   apiKey: process.env.GROQ_API_KEY,
@@ -14,14 +15,32 @@ const model = new ChatGroq({
 
 const agent = createAgent({
   model,
-  tools: [addTwoNumbers, weatherTool],
+  tools: [addTwoNumbers, weatherTool, employeeInfoTool],
+  response_format: { type: "json_object" },
 });
 
-const result = await agent.invoke({
-  messages: [{ role: "user", content: " tell me the weather of Mumbai" }],
-});
+export async function runEmployeeAgent(query) {
+  const systemMessage = `
+RULES:
+- Your answer MUST be a single plain sentence or paragraph.
+- NO bullet points.
+- NO numbering (like 1. 2. 3.).
+- NO markdown (*, -, #).
+- NO new lines for lists.
+- If multiple employees exist, separate them with commas.
 
-console.log(
-  "Agent Final Response:",
-  result.messages[result.messages.length - 1].content
-);
+`;
+
+  if (typeof query !== "string") {
+    throw new Error("Query must be a string");
+  }
+  const response = await agent.invoke({
+    messages: [
+      { role: "system", content: systemMessage },
+      { role: "user", content: query },
+    ],
+  });
+
+  // Return the final answer
+  return response.messages[response.messages.length - 1].content;
+}
